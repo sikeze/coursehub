@@ -108,7 +108,7 @@ foreach ( $usercourse as $courses ) {
 	$fullname = $courses->fullname;
 	$courseid = $courses->id;
 	$shortname = $courses->shortname;
-	$totals = $courses->totalnotifications;
+
 	$url = new moodle_url("/course/view.php", array("id" => "$courseid"));
 	$html = '<a href='.$url.'><button type="button" class="btn btn-info btn-lg" style="white-space: normal; width: 90%; height: 90%; border: 1px solid lightgray; background: #F0F0F0;" courseid="' . $courseid . '" fullname="' . $fullname . '" moodleid="'.$USER->id.'" component="button">';
 	$html .= '<p class="name" align="left" style="position: relative; height: 3em; overflow: hidden; color: black; font-weight: bold; text-decoration: none; font-size:13px; word-wrap: initial;" courseid="' . $courseid . '" moodleid="'.$USER->id.'" component="button"> 
@@ -126,5 +126,22 @@ foreach ( $usercourse as $courses ) {
 }
 $coursetable->data = $data;
 echo html_writer::table($coursetable);
+
+$record = new StdClass();
+$record->userid = $USER->id;
+$record->lastvisit = time();
+
+if($record = $DB->get_record("local_coursehub", array("userid" => $USER->id))) {
+	$record->lastvisit = time();
+	
+	$DB->update_record("local_coursehub", $record);
+} else {
+	$record = new StdClass();
+	$record->userid = $USER->id;
+	$record->timecreated = time();
+	$record->lastvisit = $record->timecreated;
+	
+	$DB->insert_record("local_coursehub", $record);
+}
 
 echo $OUTPUT->footer();
