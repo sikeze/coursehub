@@ -35,18 +35,91 @@ if (isguestuser()) {
 
 $context = context_system::instance();
 
-if (!has_capability("local/coursehub:view", $context)) {
-	print_error("ACCESS DENIED");
-}
 
+echo '<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">';
+echo '<link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>';
+echo '<meta name="viewport" content="width=device-width, initial-scale=1.0"/>';
 $url = new moodle_url("/local/coursehub/index.php");
 $PAGE->set_context($context);
 $PAGE->set_url($url);
 $PAGE->set_pagelayout("standard");
 $PAGE->set_title(get_string("page_title", "local_coursehub"));
 $PAGE->set_heading(get_string("page_heading", "local_coursehub"));
+$PAGE->requires->jquery();
+$PAGE->requires->jquery_plugin ( 'ui' );
+$PAGE->requires->jquery_plugin ( 'ui-css' );
 
 echo $OUTPUT->header();
-//echo $OUTPUT->heading(get_string("page_heading", "local_coursehub"));
+
+echo html_writer::tag('h3','Notificaciones');
+echo html_writer::start_tag('div',array('style' => 'width:100%; height: 210px; overflow:auto;'));
+echo '<ul class="collection with-header">
+        <li class="collection-item"><div>Juan Fernando entrego tarea "tarea1" en curso "2220-S-MAT106-2-2-2017".<a href="#!" class="secondary-content"><i class="material-icons">send</i></a></div></li>
+        <li class="collection-item"><div>Mark henriquez entrego tarea "tarea1" en curso "2220-S-MAT106-2-2-2017".<a href="#!" class="secondary-content"><i class="material-icons">send</i></a></div></li>
+        <li class="collection-item"><div>Joaquin Rivano escribio en el foro del curso "2220-S-MAT118-2-2-2017".<a href="#!" class="secondary-content"><i class="material-icons">send</i></a></div></li>
+        <li class="collection-item"><div>Pedro Picapiedra escribio en el foro del curso "2220-S-CORE102-2-2-2017".<a href="#!" class="secondary-content"><i class="material-icons">send</i></a></div></li>
+		<li class="collection-item"><div>Juan Ortiz escribio en el foro del curso "2220-S-LITR108-2-2-2017".<a href="#!" class="secondary-content"><i class="material-icons">send</i></a></div></li>
+      </ul>';
+echo html_writer::end_tag('div');
+echo html_writer::tag('h3','Acciones globales');
+echo html_writer::start_tag('div',array('style' => 'width:100%; height: 20%;'));
+$table = new html_table("p");
+$table->size = array(
+		"33%",
+		"34%",
+		"33%",
+);
+$url = new moodle_url('/');
+$table->data = array(
+		array($OUTPUT->single_button($url, 'Escribir en foros'),$OUTPUT->single_button($url, 'Agregar eMarkings'),$OUTPUT->single_button($url, 'Agregar Tareas')),
+		array($OUTPUT->single_button($url, 'Agregar Encuestas'),$OUTPUT->single_button($url, '---'),$OUTPUT->single_button($url, '---'))
+		
+);
+
+echo html_writer::table($table);
+echo html_writer::end_tag('div');
+echo html_writer::tag('h3','Mis cursos');
+
+$coursetable = new html_table();
+$coursetable->size = array(
+		"33%",
+		"34%",
+		"33%",
+);
+
+$usercourse = enrol_get_users_courses ( $USER->id );
+$courseidarray = array ();
+foreach ( $usercourse as $courses ) {
+	// Only visible courses
+	if($courses->visible == 1){
+		$courseidarray [] = $courses->id;
+	}else{
+		// Remove invisible courses
+		unset($usercourse[$key]);
+	}
+}
+$data = array();
+$count = 0;
+$row = 0;
+foreach ( $usercourse as $courses ) {
+	
+	$fullname = $courses->fullname;
+	$courseid = $courses->id;
+	$shortname = $courses->shortname;
+	$totals = $courses->totalnotifications;
+	
+	$html = '<div class="block" style="height: 4em;"><button type="button" class="btn btn-info btn-lg" style="white-space: normal; width: 90%; height: 90%; border: 1px solid lightgray; background: #F0F0F0;" courseid="' . $courseid . '" fullname="' . $fullname . '" moodleid="'.$moodleid.'" lastvisit="'.$lastvisit.'" component="button">';
+	$html .= '<p class="name" align="left" style="position: relative; height: 3em; overflow: hidden; color: black; font-weight: bold; text-decoration: none; font-size:13px; word-wrap: initial;" courseid="' . $courseid . '" moodleid="'.$moodleid.'" lastvisit="'.$lastvisit.'" component="button"> 
+				' . $fullname . '</p>';
+	$html .= '</button></div>';
+	$data[$row][count] = $html;
+	$count++;
+	if($count>3){
+		$count = 0;
+		$row++;
+	}
+}
+$coursetable->data = $data;
+echo html_writer::table($coursetable);
 
 echo $OUTPUT->footer();
