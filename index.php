@@ -62,18 +62,17 @@ echo '<ul class="collection with-header">
       </ul>';
 echo html_writer::end_tag('div');
 echo html_writer::tag('h3','Acciones globales');
-echo html_writer::start_tag('div',array('style' => 'width:100%; height: 20%;'));
+echo html_writer::start_tag('div',array('style' => 'width:100%; height: 10%;'));
 $table = new html_table("p");
 $table->size = array(
-		"33%",
-		"34%",
-		"33%",
+		"25%",
+		"25%",
+		"25%",
+		"25%"
 );
 $url = new moodle_url('/');
 $table->data = array(
-		array($OUTPUT->single_button($url, 'Escribir en foros'),$OUTPUT->single_button($url, 'Agregar eMarkings'),$OUTPUT->single_button($url, 'Agregar Tareas')),
-		array($OUTPUT->single_button($url, 'Agregar Encuestas'),$OUTPUT->single_button($url, '---'),$OUTPUT->single_button($url, '---'))
-		
+		array($OUTPUT->single_button($url, 'Escribir en foros'),$OUTPUT->single_button($url, 'Agregar eMarkings'),$OUTPUT->single_button($url, 'Agregar Tareas'), $OUTPUT->single_button($url, 'Agregar Encuestas'))
 );
 
 echo html_writer::table($table);
@@ -99,6 +98,9 @@ foreach ( $usercourse as $courses ) {
 	}
 }
 $data = array();
+$data[0][0] = '';
+$data[0][1] = '';
+$data[0][2] = '';
 $count = 0;
 $row = 0;
 foreach ( $usercourse as $courses ) {
@@ -108,15 +110,18 @@ foreach ( $usercourse as $courses ) {
 	$shortname = $courses->shortname;
 	$totals = $courses->totalnotifications;
 	
-	$html = '<div class="block" style="height: 4em;"><button type="button" class="btn btn-info btn-lg" style="white-space: normal; width: 90%; height: 90%; border: 1px solid lightgray; background: #F0F0F0;" courseid="' . $courseid . '" fullname="' . $fullname . '" moodleid="'.$moodleid.'" lastvisit="'.$lastvisit.'" component="button">';
+	$html = '<button type="button" class="btn btn-info btn-lg" style="white-space: normal; width: 90%; height: 90%; border: 1px solid lightgray; background: #F0F0F0;" courseid="' . $courseid . '" fullname="' . $fullname . '" moodleid="'.$moodleid.'" lastvisit="'.$lastvisit.'" component="button">';
 	$html .= '<p class="name" align="left" style="position: relative; height: 3em; overflow: hidden; color: black; font-weight: bold; text-decoration: none; font-size:13px; word-wrap: initial;" courseid="' . $courseid . '" moodleid="'.$moodleid.'" lastvisit="'.$lastvisit.'" component="button"> 
 				' . $fullname . '</p>';
-	$html .= '</button></div>';
-	$data[$row][count] = $html;
+	$html .= '</button>';
+	$data[$row][$count] = $html;
 	$count++;
-	if($count>3){
+	if($count>2){
 		$count = 0;
 		$row++;
+		$data[$row][0] = '';
+		$data[$row][1] = '';
+		$data[$row][2] = '';
 	}
 }
 $coursetable->data = $data;
