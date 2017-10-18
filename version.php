@@ -28,5 +28,5 @@ defined('MOODLE_INTERNAL') || die();
 
 $plugin->pluginname = "local_coursehub";
 $plugin->component = "local_coursehub";
-$plugin->version   = "2017101302";
+$plugin->version   = "2017101801";
 $plugin->requires = 2015111600;
