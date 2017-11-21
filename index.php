@@ -97,6 +97,8 @@ foreach ( $usercourse as $courses ) {
 		unset($usercourse[$key]);
 	}
 }
+
+
 $data = array();
 $data[0][0] = '';
 $data[0][1] = '';
@@ -124,8 +126,54 @@ foreach ( $usercourse as $courses ) {
 		$data[$row][2] = '';
 	}
 }
+
+$grouptable = new html_table();
+$grouptable->size = array(
+		"33%",
+		"34%",
+		"33%",
+);
+
+$bef = "";
+$bif = array();
+$count1 = 0;
+$count2 = 0;
+foreach($usercourse as $group){
+	$category = $group->category;
+	$shortname1 = $group->shortname;
+	$fullname1 = $group->fullname;
+	$courseid1 = $group->id;
+	if($bef != $category){
+		$fullname2 = substr($fullname1, 0, -5);
+		$url1 = new moodle_url("local/coursehub/index.php");
+		$html1 = '<a href='.$url1.'><button type="button" class="btn btn-info btn-lg" style="white-space: normal; width: 60%; height: 30%; border: 1px solid lightgray; background: #F0F0F0;" courseid="' . $courseid . '" fullname="' . $fullname2 . '" moodleid="'.$USER->id.'" component="button">';
+		$html1 .= '<p class="name" align="left" style="position: relative; height: 3em; overflow: hidden; color: black; font-weight: bold; text-decoration: none; font-size:13px; word-wrap: initial;" courseid="' . $courseid . '" moodleid="'.$USER->id.'" component="button">
+				' . $fullname2 . '</p>';
+		$html1 .= '</button></a>';
+		$count1++;
+		$count2 = 0;
+		$boton[$count1] = $html1;
+		echo $count1;
+		echo $fullname2;
+		echo "</br>";
+	}
+	$bif[$count1][$count2] = array($fullname1, $courseid1);
+	$count2++;
+	$bef = $category;
+}
+
+foreach ($boton as $bot){
+	echo $bot;
+	echo "</br>";
+}
+
+var_dump($bif);
+//$grouptable->data = $boton;
+//echo html_writer::table($grouptable);
+
 $coursetable->data = $data;
 echo html_writer::table($coursetable);
+
 
 $record = new StdClass();
 $record->userid = $USER->id;
