@@ -90,7 +90,7 @@ $coursetable->size = array(
 
 if($nombrecortocurso != null){
 	$usercourseparam="'%2220-S-$nombrecortocurso%'";
-	$usercoursesql = "SELECT *
+	$usercoursesql = "SELECT c.*
 	FROM mdl_user u
 	JOIN mdl_user_enrolments ue ON ue.userid = u.id
 	JOIN mdl_enrol e ON e.id = ue.enrolid
@@ -160,7 +160,7 @@ if($nombrecortocurso != null){
 		
 		if(!in_array($course[2], $courseidarray)){
 			// Only visible courses
-				$courseidarray [] = $courses->shortname;
+			$courseidarray [] = $course[2];
 		}
 		
 	}
@@ -172,13 +172,14 @@ if($nombrecortocurso != null){
 	$data[0][2] = '';
 	$count = 0;
 	$row = 0;
+	var_dump($courseidarray);
 	foreach ( $courseidarray as $courses ) {
 		
 		$fullname = $courses->fullname;
 		$courseid = $courses->id;
 		$shortname = $courses->shortname;
 		$courseshort = explode("-",$courses);
-		$url = new moodle_url("/local/coursehub/index.php", array("shortname" => "$courseshort[2]"));
+		$url = new moodle_url("/local/coursehub/index.php", array("shortname" => "$course[2]"));
 		$html = '<a href='.$url.'><button type="button" class="btn btn-info btn-lg" style="white-space: normal; width: 90%; height: 90%; border: 1px solid lightgray; background: #F0F0F0;" courseid="' . $courseid . '" fullname="' . $fullname . '" moodleid="'.$USER->id.'" component="button">';
 		$html .= '<p class="name" align="left" style="position: relative; height: 3em; overflow: hidden; color: black; font-weight: bold; text-decoration: none; font-size:13px; word-wrap: initial;" courseid="' . $courseid . '" moodleid="'.$USER->id.'" component="button">
 				' . $courses. '</p>';
