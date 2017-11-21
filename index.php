@@ -33,6 +33,8 @@ if (isguestuser()) {
 	die();
 }
 
+$nombrecortocurso = optional_param('shortname', null, PARAM_TEXT);
+
 $context = context_system::instance();
 
 
@@ -86,93 +88,116 @@ $coursetable->size = array(
 		"33%",
 );
 
-$usercourse = enrol_get_users_courses ( $USER->id );
-$courseidarray = array ();
-foreach ( $usercourse as $courses ) {
-	// Only visible courses
-	if($courses->visible == 1){
-		$courseidarray [] = $courses->id;
-	}else{
-		// Remove invisible courses
-		unset($usercourse[$key]);
+if($nombrecortocurso != null){
+	$usercourseparam="'%2220-S-$nombrecortocurso%'";
+	$usercoursesql = "SELECT *
+	FROM mdl_user u
+	JOIN mdl_user_enrolments ue ON ue.userid = u.id
+	JOIN mdl_enrol e ON e.id = ue.enrolid
+	JOIN mdl_role_assignments ra ON ra.userid = u.id
+	JOIN mdl_context ct ON ct.id = ra.contextid AND ct.contextlevel = 50
+	JOIN mdl_course c ON c.id = ct.instanceid AND e.courseid = c.id
+	JOIN mdl_role r ON r.id = ra.roleid AND r.shortname = 'editingteacher'
+	JOIN mdl_course_categories cc ON c.category = cc.id
+	WHERE c.shortname like $usercourseparam AND c.shortname like '%-2-2017'";
+	$usercourse = $DB->get_records_sql($usercoursesql);
+	$courseidarray = array ();
+	foreach ( $usercourse as $courses ) {
+		// Only visible courses
+		if($courses->visible == 1){
+			$courseidarray [] = $courses->id;
+		}else{
+			// Remove invisible courses
+			unset($usercourse[$key]);
+		}
 	}
-}
-
-
-$data = array();
-$data[0][0] = '';
-$data[0][1] = '';
-$data[0][2] = '';
-$count = 0;
-$row = 0;
-foreach ( $usercourse as $courses ) {
 	
-	$fullname = $courses->fullname;
-	$courseid = $courses->id;
-	$shortname = $courses->shortname;
-
-	$url = new moodle_url("/course/view.php", array("id" => "$courseid"));
-	$html = '<a href='.$url.'><button type="button" class="btn btn-info btn-lg" style="white-space: normal; width: 90%; height: 90%; border: 1px solid lightgray; background: #F0F0F0;" courseid="' . $courseid . '" fullname="' . $fullname . '" moodleid="'.$USER->id.'" component="button">';
-	$html .= '<p class="name" align="left" style="position: relative; height: 3em; overflow: hidden; color: black; font-weight: bold; text-decoration: none; font-size:13px; word-wrap: initial;" courseid="' . $courseid . '" moodleid="'.$USER->id.'" component="button"> 
+	
+	$data = array();
+	$data[0][0] = '';
+	$data[0][1] = '';
+	$data[0][2] = '';
+	$count = 0;
+	$row = 0;
+	foreach ( $usercourse as $courses ) {
+		
+		$fullname = $courses->fullname;
+		$courseid = $courses->id;
+		$shortname = $courses->shortname;
+		
+		$url = new moodle_url("/course/view.php", array("id" => "$courseid"));
+		$html = '<a href='.$url.'><button type="button" class="btn btn-info btn-lg" style="white-space: normal; width: 90%; height: 90%; border: 1px solid lightgray; background: #F0F0F0;" courseid="' . $courseid . '" fullname="' . $fullname . '" moodleid="'.$USER->id.'" component="button">';
+		$html .= '<p class="name" align="left" style="position: relative; height: 3em; overflow: hidden; color: black; font-weight: bold; text-decoration: none; font-size:13px; word-wrap: initial;" courseid="' . $courseid . '" moodleid="'.$USER->id.'" component="button">
 				' . $fullname . '</p>';
-	$html .= '</button></a>';
-	$data[$row][$count] = $html;
-	$count++;
-	if($count>2){
-		$count = 0;
-		$row++;
-		$data[$row][0] = '';
-		$data[$row][1] = '';
-		$data[$row][2] = '';
+		$html .= '</button></a>';
+		$data[$row][$count] = $html;
+		$count++;
+		if($count>2){
+			$count = 0;
+			$row++;
+			$data[$row][0] = '';
+			$data[$row][1] = '';
+			$data[$row][2] = '';
+		}
 	}
-}
-
-$grouptable = new html_table();
-$grouptable->size = array(
-		"33%",
-		"34%",
-		"33%",
-);
-
-$bef = "";
-$bif = array();
-$count1 = 0;
-$count2 = 0;
-foreach($usercourse as $group){
-	$category = $group->category;
-	$shortname1 = $group->shortname;
-	$fullname1 = $group->fullname;
-	$courseid1 = $group->id;
-	if($bef != $category){
-		$fullname2 = substr($fullname1, 0, -5);
-		$url1 = new moodle_url("local/coursehub/index.php");
-		$html1 = '<a href='.$url1.'><button type="button" class="btn btn-info btn-lg" style="white-space: normal; width: 60%; height: 30%; border: 1px solid lightgray; background: #F0F0F0;" courseid="' . $courseid . '" fullname="' . $fullname2 . '" moodleid="'.$USER->id.'" component="button">';
-		$html1 .= '<p class="name" align="left" style="position: relative; height: 3em; overflow: hidden; color: black; font-weight: bold; text-decoration: none; font-size:13px; word-wrap: initial;" courseid="' . $courseid . '" moodleid="'.$USER->id.'" component="button">
-				' . $fullname2 . '</p>';
-		$html1 .= '</button></a>';
-		$count1++;
-		$count2 = 0;
-		$boton[$count1] = $html1;
-		echo $count1;
-		echo $fullname2;
-		echo "</br>";
+	
+	$coursetable->data = $data;
+	echo html_writer::table($coursetable);
+}else{
+	$usercoursesql = "SELECT c.id, c.shortname
+	FROM mdl_user u
+	JOIN mdl_user_enrolments ue ON ue.userid = u.id
+	JOIN mdl_enrol e ON e.id = ue.enrolid
+	JOIN mdl_role_assignments ra ON ra.userid = u.id
+	JOIN mdl_context ct ON ct.id = ra.contextid AND ct.contextlevel = 50
+	JOIN mdl_course c ON c.id = ct.instanceid AND e.courseid = c.id
+	JOIN mdl_role r ON r.id = ra.roleid AND r.shortname = 'editingteacher'
+	JOIN mdl_course_categories cc ON c.category = cc.id";
+	$usercourse = $DB->get_records_sql($usercoursesql);
+	$courseidarray = array ();
+	foreach ( $usercourse as $courses ) {
+		$course = explode("-",$courses->shortname);
+		
+		if(!in_array($course[2], $courseidarray)){
+			// Only visible courses
+				$courseidarray [] = $courses->shortname;
+		}
+		
 	}
-	$bif[$count1][$count2] = array($fullname1, $courseid1);
-	$count2++;
-	$bef = $category;
+	
+	
+	$data = array();
+	$data[0][0] = '';
+	$data[0][1] = '';
+	$data[0][2] = '';
+	$count = 0;
+	$row = 0;
+	foreach ( $courseidarray as $courses ) {
+		
+		$fullname = $courses->fullname;
+		$courseid = $courses->id;
+		$shortname = $courses->shortname;
+		$courseshort = explode("-",$courses);
+		$url = new moodle_url("/local/coursehub/index.php", array("shortname" => "$courseshort[2]"));
+		$html = '<a href='.$url.'><button type="button" class="btn btn-info btn-lg" style="white-space: normal; width: 90%; height: 90%; border: 1px solid lightgray; background: #F0F0F0;" courseid="' . $courseid . '" fullname="' . $fullname . '" moodleid="'.$USER->id.'" component="button">';
+		$html .= '<p class="name" align="left" style="position: relative; height: 3em; overflow: hidden; color: black; font-weight: bold; text-decoration: none; font-size:13px; word-wrap: initial;" courseid="' . $courseid . '" moodleid="'.$USER->id.'" component="button">
+				' . $courses. '</p>';
+		$html .= '</button></a>';
+		$data[$row][$count] = $html;
+		$count++;
+		if($count>2){
+			$count = 0;
+			$row++;
+			$data[$row][0] = '';
+			$data[$row][1] = '';
+			$data[$row][2] = '';
+		}
+	}
+	
+	$coursetable->data = $data;
+	echo html_writer::table($coursetable);
 }
 
-foreach ($boton as $bot){
-	echo $bot;
-	echo "</br>";
-}
-
-var_dump($bif);
-//$grouptable->data = $boton;
-//echo html_writer::table($grouptable);
-
-$coursetable->data = $data;
-echo html_writer::table($coursetable);
 
 
 $record = new StdClass();
@@ -191,5 +216,4 @@ if($record = $DB->get_record("local_coursehub", array("userid" => $USER->id))) {
 	
 	$DB->insert_record("local_coursehub", $record);
 }
-
 echo $OUTPUT->footer();
