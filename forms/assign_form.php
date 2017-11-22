@@ -45,7 +45,25 @@ class coursehub_assign_form extends moodleform {
 		$mform->addElement("hidden", "action", "assign");
 		$mform->setType("action", PARAM_TEXT);
 		
-		$this->add_action_buttons(true, "Agregar Deporte");
+		$this->add_action_buttons(true, "Crear Tarea");
+	}
+	
+	public function validation($data, $files){
+		
+	}
+}
+class coursehub_emarking_form extends moodleform {
+	public function definition() {
+		
+		$mform = $this->_form;
+		$instance = $this->_customdata;
+		$courses = $instance["courses"];
+		$ids = $instance["ids"];
+		$mform->addElement('header', 'general', 'Emarking');
+		$mform->addElement('select', 'courses', 'cursos', $courses);
+		$mform->addElement("hidden", "action", "emarking");
+		$mform->setType("action", PARAM_TEXT);
+		$this->add_action_buttons(true, "Crear emarking");
 	}
 	
 	public function validation($data, $files){

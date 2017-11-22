@@ -36,6 +36,7 @@ if (isguestuser()) {
 
 $nombrecortocurso = optional_param('shortname', null, PARAM_TEXT);
 $action = optional_param('action', null, PARAM_TEXT);
+$insert = optional_param('insert', "", PARAM_TEXT);
 
 $context = context_system::instance();
 
@@ -55,16 +56,65 @@ $PAGE->requires->jquery_plugin ( 'ui-css' );
 
 echo $OUTPUT->header();
 
-	echo html_writer::tag('h3','Notificaciones');
-	echo html_writer::start_tag('div',array('style' => 'width:100%; height: 210px; overflow:auto;'));
-	echo '<ul class="collection with-header">
-	        <li class="collection-item"><div>Juan Fernando entrego tarea "tarea1" en curso "2220-S-MAT106-2-2-2017".<a href="#!" class="secondary-content"><i class="material-icons">send</i></a></div></li>
-	        <li class="collection-item"><div>Mark henriquez entrego tarea "tarea1" en curso "2220-S-MAT106-2-2-2017".<a href="#!" class="secondary-content"><i class="material-icons">send</i></a></div></li>
-	        <li class="collection-item"><div>Joaquin Rivano escribio en el foro del curso "2220-S-MAT118-2-2-2017".<a href="#!" class="secondary-content"><i class="material-icons">send</i></a></div></li>
-	        <li class="collection-item"><div>Pedro Picapiedra escribio en el foro del curso "2220-S-CORE102-2-2-2017".<a href="#!" class="secondary-content"><i class="material-icons">send</i></a></div></li>
-			<li class="collection-item"><div>Juan Ortiz escribio en el foro del curso "2220-S-LITR108-2-2-2017".<a href="#!" class="secondary-content"><i class="material-icons">send</i></a></div></li>
-	      </ul>';
-	echo html_writer::end_tag('div');
+echo html_writer::tag('h3','Notificaciones de foro');
+if ($insert == "success") {
+	echo $OUTPUT->notification("Mensajes enviados correctamente", "notifysuccess");
+}
+echo html_writer::start_tag('div',array('style' => 'width:100%; height: 210px; overflow:auto;'));
+
+$usercoursesquery = "SELECT c.id, c.shortname
+	FROM mdl_user u
+	JOIN mdl_user_enrolments ue ON ue.userid = u.id
+	JOIN mdl_enrol e ON e.id = ue.enrolid
+	JOIN mdl_role_assignments ra ON ra.userid = u.id
+	JOIN mdl_context ct ON ct.id = ra.contextid AND ct.contextlevel = 50
+	JOIN mdl_course c ON c.id = ct.instanceid AND e.courseid = c.id
+	JOIN mdl_role r ON r.id = ra.roleid AND r.shortname = 'editingteacher'
+	JOIN mdl_course_categories cc ON c.category = cc.id";
+
+$usercourses = $DB->get_records_sql($usercoursesquery);
+
+echo '<ul class="collection with-header">';
+foreach ($usercourses as $usercur){
+	$forumquery = "SELECT fp.id, u.username, fp.message, cm.id as cmid,f.timemodified
+		FROM mdl_forum_discussions fd
+		INNER JOIN mdl_forum_posts fp ON fp.discussion = fd.id
+		INNER JOIN mdl_user u ON u.id = fp.userid
+		INNER JOIN mdl_forum f ON f.id = fd.forum
+		INNER JOIN mdl_course_modules cm ON cm.module = 9  AND cm.instance = f.id 
+		WHERE fd.course = ".$usercur->id."
+		ORDER BY modified";
+	
+	$forumdiscussions = $DB->get_records_sql($forumquery);
+	foreach ($forumdiscussions as $comment){
+		$url = new moodle_url('/mod/forum/view.php', array("id"=>$comment->cmid));
+		echo '<li class="collection-item"><div>'.$comment->username." escribio en el foro del curso: ".$usercur->shortname.' a las: '.gmdate("H:i:s Y-m-d ", $comment->timemodified).'<a href="'.$url.'" class="secondary-content"><i class="material-icons">send</i></a></div></li>';
+	}
+}
+echo '</ul>';
+
+echo html_writer::end_tag('div');
+
+echo html_writer::tag('h3','Notificaciones de tarea');
+echo html_writer::start_tag('div',array('style' => 'width:100%; height: 210px; overflow:auto;'));
+
+echo '<ul class="collection with-header">';
+foreach ($usercourses as $usercur){
+	$forumquery = "SELECT mas.id, ma.course, ma.name, ma.intro, mas.userid, u.username, mas.timemodified, ma.course as cmid FROM `mdl_assign` ma
+		INNER JOIN mdl_assign_submission mas
+		INNER JOIN mdl_user u
+		WHERE ma.id = mas.assignment AND u.id = mas.userid AND ma.course = ".$usercur->id."
+		ORDER BY mas.timemodified";
+	
+	$forumdiscussions = $DB->get_records_sql($forumquery);
+	foreach ($forumdiscussions as $comment){
+		$url = new moodle_url('/course/view.php', array("id"=>$comment->cmid));
+		echo '<li class="collection-item"><div>'.$comment->username." observo la tarea: ".$comment->name." curso: ".$usercur->shortname.'<a href="'.$url.'" class="secondary-content"><i class="material-icons">send</i></a></div></li>';
+	}
+}
+echo '</ul>';
+
+echo html_writer::end_tag('div');
 	echo html_writer::tag('h3','Acciones globales');
 	echo html_writer::start_tag('div',array('style' => 'width:100%; height: 10%;'));
 	$table = new html_table("p");
@@ -74,11 +124,12 @@ echo $OUTPUT->header();
 			"25%",
 			"25%"
 	);
-	$url = new moodle_url('/');
+	$urlforos = new moodle_url('/local/coursehub/message.php');
+	$urlassign = new moodle_url('/local/coursehub/index.php', array("action"=>"assign"));
+	$urlemarking = new moodle_url('/local/coursehub/index.php', array("action"=>"emarking"));
 	$table->data = array(
-			array($OUTPUT->single_button($url, 'Escribir en foros'),$OUTPUT->single_button($url, 'Agregar eMarkings'),$OUTPUT->single_button($url, 'Agregar Tareas'), $OUTPUT->single_button($url, 'Agregar Encuestas'))
+			array($OUTPUT->single_button($urlforos, 'Escribir en foros'),$OUTPUT->single_button($urlemarking, 'Agregar eMarkings'),$OUTPUT->single_button($urlassign, 'Agregar Tareas'))
 	);
-	
 	echo html_writer::table($table);
 	echo html_writer::end_tag('div');
 	echo html_writer::tag('h3','Mis cursos');
@@ -175,12 +226,11 @@ echo $OUTPUT->header();
 		$count = 0;
 		$row = 0;
 		foreach ( $courseidarray as $courses ) {
-			
 			$fullname = $courses->fullname;
 			$courseid = $courses->id;
 			$shortname = $courses->shortname;
 			$courseshort = explode("-",$courses);
-			$url = new moodle_url("/local/coursehub/index.php", array("shortname" => "$course[2]"));
+			$url = new moodle_url("/local/coursehub/index.php", array("shortname" => "$courses"));
 			$html = '<a href='.$url.'><button type="button" class="btn btn-info btn-lg" style="white-space: normal; width: 90%; height: 90%; border: 1px solid lightgray; background: #F0F0F0;" courseid="' . $courseid . '" fullname="' . $fullname . '" moodleid="'.$USER->id.'" component="button">';
 			$html .= '<p class="name" align="left" style="position: relative; height: 3em; overflow: hidden; color: black; font-weight: bold; text-decoration: none; font-size:13px; word-wrap: initial;" courseid="' . $courseid . '" moodleid="'.$USER->id.'" component="button">
 					' . $courses. '</p>';
@@ -289,6 +339,73 @@ echo $OUTPUT->header();
 		$return = new moodle_url("/local/coursehub/index.php");
 		redirect($return);
 		
+	}
+}
+if($action == 'emarking'){
+	$url = new moodle_url("/local/coursehub/index.php");
+	$PAGE->set_context($context);
+	$PAGE->set_url($url);
+	$PAGE->set_pagelayout("standard");
+	$PAGE->set_title(get_string("page_title", "local_coursehub"));
+	$PAGE->set_heading(get_string("page_heading", "local_coursehub"));
+	$PAGE->requires->jquery();
+	$PAGE->requires->jquery_plugin ( 'ui' );
+	$PAGE->requires->jquery_plugin ( 'ui-css' );
+	
+	echo $OUTPUT->header();
+	
+	$usercoursesql = "SELECT c.id, c.shortname
+		FROM mdl_user u
+		JOIN mdl_user_enrolments ue ON ue.userid = u.id
+		JOIN mdl_enrol e ON e.id = ue.enrolid
+		JOIN mdl_role_assignments ra ON ra.userid = u.id
+		JOIN mdl_context ct ON ct.id = ra.contextid AND ct.contextlevel = 50
+		JOIN mdl_course c ON c.id = ct.instanceid AND e.courseid = c.id
+		JOIN mdl_role r ON r.id = ra.roleid AND r.shortname = 'editingteacher'
+		JOIN mdl_course_categories cc ON c.category = cc.id";
+	$usercourse = $DB->get_records_sql($usercoursesql);
+	$courseidarray = array ();
+	foreach ( $usercourse as $courses ) {
+		$course = explode("-",$courses->shortname);
+		
+		if(!in_array($course[2], $courseidarray)){
+			// Only visible courses
+			$courseidarray [] = $course[2];
+			
+		}
+		
+	}
+	
+	$form = new coursehub_emarking_form(null,array(
+			"courses" => $courseidarray,
+			"ids" => $ids
+	));
+	if (!$form->get_data()) {
+		$form->display();
+	} elseif ($data = $form->get_data()) {
+		$usercoursesql = "SELECT c.id, c.shortname
+		FROM mdl_user u
+		JOIN mdl_user_enrolments ue ON ue.userid = u.id
+		JOIN mdl_enrol e ON e.id = ue.enrolid
+		JOIN mdl_role_assignments ra ON ra.userid = u.id
+		JOIN mdl_context ct ON ct.id = ra.contextid AND ct.contextlevel = 50
+		JOIN mdl_course c ON c.id = ct.instanceid AND e.courseid = c.id
+		JOIN mdl_role r ON r.id = ra.roleid AND r.shortname = 'editingteacher'
+		JOIN mdl_course_categories cc ON c.category = cc.id";
+		$usercourse = $DB->get_records_sql($usercoursesql);
+		$courseidarray = array ();
+		foreach ( $usercourse as $courses ) {
+			$course = explode("-",$courses->shortname);
+			
+			if(!in_array($course[2], $courseidarray)){
+				// Only visible courses
+				$courseidarray [] = $courses->id;
+				
+			}
+			
+		}
+		$return = new moodle_url("/course/modedit.php",array("add"=>"emarking","section"=>"2","course"=>$courseidarray[$data->courses],"type"=>"1", "return" => "0", "sr"=>"0"));
+		redirect($return);
 	}
 }
 echo $OUTPUT->footer();
